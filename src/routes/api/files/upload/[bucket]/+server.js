@@ -44,6 +44,12 @@ export async function POST({ params, request }) {
     if (existingFile) {
         fileName = `${Date.now()}_${file.name}`; // Rename the file to avoid conflict
     }
+    // check if the file size exceeds the user's remaining storage limit
+    const userFiles = await db.select().from(files).where(eq(files.userId, session.user.id));
+    const totalStorageUsed = userFiles.reduce((total, file) => total + file.size, 0);
+    if (totalStorageUsed + file.size > (bucketExists.sizeLimit)) {
+        return new Response('Storage limit exceeded', { status: 400 });
+    }
     // Generate a unique ID for the file (you can use a library like uuid)
     const id = crypto.randomUUID();
 
@@ -64,7 +70,8 @@ export async function POST({ params, request }) {
         fileName,
         bucket,
         mimeType: file.type,
-        size: file.size
+        size: file.size,
+        remainingStorage: bucketExists.sizeLimit - (totalStorageUsed + file.size)
     }), {
         headers: { 'Content-Type': 'application/json' },
         status: 201

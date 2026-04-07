@@ -1,4 +1,5 @@
 import { relations } from "drizzle-orm";
+import { integer } from "drizzle-orm/gel-core";
 import { pgTable, text, timestamp, boolean, index } from "drizzle-orm/pg-core";
 
 export const user = pgTable("user", {

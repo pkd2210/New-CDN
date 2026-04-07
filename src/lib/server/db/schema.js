@@ -1,4 +1,4 @@
-import { pgTable, text, integer, timestamp, customType, serial, uniqueIndex } from 'drizzle-orm/pg-core';
+import { pgTable, text, integer, timestamp, customType, serial, uniqueIndex, bigint } from 'drizzle-orm/pg-core';
 
 const bytea = customType({
   dataType() {
@@ -39,6 +39,7 @@ export const buckets = pgTable(
     publication: text("publication").notNull(), // e.g., "public" or "private"
     accessList: text("access_list").array(), // Array of user IDs who have access to this bucket (for private buckets)
     createdAt: timestamp("created_at").defaultNow(),
+    sizeLimit: bigint("size_limit", { mode: "number" }).default(5368709120).notNull(), // Default 5GB size limit per bucket
   },
   (table) => [
     uniqueIndex("buckets_user_name_unique").on(table.name),
