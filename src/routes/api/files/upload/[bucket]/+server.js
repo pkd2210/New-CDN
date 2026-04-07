@@ -1,0 +1,65 @@
+import { auth } from '$lib/server/auth'; // Better-auth instance
+import { db } from '$lib/server/db'; // Drizzle ORM instance
+import { files, buckets } from '$lib/server/db/schema'; // Drizzle ORM schema for files and buckets
+import { eq } from 'drizzle-orm'; // Drizzle ORM helper for equality checks
+import { json } from '@sveltejs/kit';
+import { env } from '$env/dynamic/private';
+
+export async function GET({ params }) {
+    return new Response("GET requests are not supported for file uploads", { status: 405 });
+}
+
+export async function POST({ params, request }) {
+    env; // Ensure env variables are loaded
+    // get bucket name from dynamic route
+    const { bucket } = params;
+    
+    // Check if user is authenticated thorugh better auth
+    const session = await auth.api.getSession({
+        headers: request.headers
+    });
+    if (!session?.user) {
+        return new Response('Unauthorized', { status: 401 });
+    }
+    // Check if bucket exists
+    const [bucketExists] = await db.select().from(buckets).where(eq(buckets.name, bucket)).limit(1);
+    if (!bucketExists) {
+        return new Response('Bucket not found', { status: 404 });
+    }
+    // Check if user has access to upload to this bucket
+    if (!bucketExists.accessList?.includes(session.user.id)) {
+        return new Response('Access denied', { status: 403 });
+    }
+    // get file from request
+    const formData = await request.formData();
+    const file = formData.get('file');
+    
+    // Check if file is present in the request
+    if (!file) {
+        return new Response('No file uploaded', { status: 400 });
+    }
+    // check if file with the same name already exists in the bucket
+    let fileName = file.name;
+    const [existingFile] = await db.select().from(files).where(eq(files.name, file.name), eq(files.bucket, bucket)).limit(1);
+    if (existingFile) {
+        fileName = `${Date.now()}_${file.name}`; // Rename the file to avoid conflict
+    }
+    // Generate a unique ID for the file (you can use a library like uuid)
+    const id = crypto.randomUUID();
+
+    // Save the file to the database
+    await db.insert(files).values({
+        id,
+        bucket,
+        userId: session.user.id, // Use the authenticated user's ID
+        name: fileName,
+        data: await file.arrayBuffer(),
+        mimeType: file.type,
+        size: file.size,
+    });
+
+    return new Response(JSON.stringify({ message: 'File uploaded successfully', "link": `${env.ORIGIN}/${bucket}/${fileName}`, fileName }), {
+        headers: { 'Content-Type': 'application/json' },
+        status: 201
+    });
+}
