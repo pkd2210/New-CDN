@@ -58,7 +58,14 @@ export async function POST({ params, request }) {
         size: file.size,
     });
 
-    return new Response(JSON.stringify({ message: 'File uploaded successfully', "link": `${env.ORIGIN}/${bucket}/${fileName}`, fileName }), {
+    return new Response(JSON.stringify({
+        message: 'File uploaded successfully',
+        link: `${env.ORIGIN}/${bucket}/${fileName}`,
+        fileName,
+        bucket,
+        mimeType: file.type,
+        size: file.size
+    }), {
         headers: { 'Content-Type': 'application/json' },
         status: 201
     });
