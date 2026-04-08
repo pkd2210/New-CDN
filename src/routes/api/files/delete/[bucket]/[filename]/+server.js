@@ -37,3 +37,7 @@ export async function GET({ params, request }) {
 export async function POST() {
     return new Response("POST requests are not supported for file deletion", { status: 405 });
 }   
+export async function DELETE() {
+    // run it as it was get
+    return await GET(...arguments);
+}
