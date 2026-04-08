@@ -30,7 +30,15 @@ export async function GET({ request, params }) {
     if (!bucketInfo) {
         return new Response('Bucket not found', { status: 404 });
     }
-    // Get files in the bucket
-    const bucketFiles = await db.select().from(files).where(eq(files.bucket, bucket));
+    // Get files in the bucket (metadata only)
+    const bucketFiles = await db.select({
+        id: files.id,
+        bucket: files.bucket,
+        userId: files.userId,
+        name: files.name,
+        mimeType: files.mimeType,
+        size: files.size,
+        createdAt: files.createdAt
+    }).from(files).where(eq(files.bucket, bucket));
     return json({ bucket: bucketInfo, files: bucketFiles });
 }

@@ -20,7 +20,6 @@ export const files = pgTable(
     bucket: text("bucket").notNull(), // Bucket name to which the file belongs
     userId: text("user_id").notNull(), // Uploader of the file
     name: text("name").notNull(), // Original file name
-    data: bytea("data").notNull(), // File data stored as bytea
     mimeType: text("mime_type").notNull(), // MIME type of the file
     size: integer("size").notNull(), // File size in bytes
     createdAt: timestamp("created_at").defaultNow(),
@@ -28,6 +27,14 @@ export const files = pgTable(
   (table) => [
     uniqueIndex("files_bucket_name_unique").on(table.bucket, table.name),
   ],
+);
+
+export const fileData = pgTable(
+  "file_data",
+  {
+    fileId: text("file_id").primaryKey().references(() => files.id, { onDelete: 'cascade' }),
+    data: bytea("data").notNull(), // File data stored as bytea
+  },
 );
 
 export const buckets = pgTable(

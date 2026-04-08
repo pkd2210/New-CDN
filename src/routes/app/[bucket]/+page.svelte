@@ -67,7 +67,7 @@
             return;
         }
 
-        const response = await fetch(`/api/bucket/delete/${bucketInfo.name}`, {
+        const response = await fetch(`/api/buckets/delete/${bucketInfo.name}`, {
             method: 'DELETE'
         });
 

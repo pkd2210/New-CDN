@@ -30,3 +30,6 @@
     </Card.Root>
 </a>
 {/each} 
+{#if buckets.length === 0}
+    <p>No buckets found. Create your first bucket to get started!</p>
+{/if}

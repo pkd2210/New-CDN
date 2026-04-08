@@ -23,6 +23,13 @@ export async function GET({ params, request }) {
     }
     // Delete the bucket
     await db.delete(buckets).where(eq(buckets.name, bucket));
+    // delete all files in the bucket (cascading delete will handle fileData)
+    await db.delete(files).where(eq(files.bucket, bucket));
 
     return new Response('Bucket deleted successfully', { status: 200 });
+}
+
+export async function DELETE() {
+    // run it as it was get
+    return await GET(...arguments);
 }

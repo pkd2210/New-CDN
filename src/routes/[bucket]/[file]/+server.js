@@ -2,7 +2,7 @@
 
 import { auth } from '$lib/server/auth'; // Better-auth instance
 import { db } from '$lib/server/db'; // Drizzle ORM instance
-import { files, buckets } from '$lib/server/db/schema'; // Drizzle ORM schema for files and buckets
+import { files, buckets, fileData } from '$lib/server/db/schema'; // Drizzle ORM schema for files and buckets
 import { eq } from 'drizzle-orm'; // Drizzle ORM helper for equality checks
 
 export async function GET({ params, request }) {
@@ -34,8 +34,14 @@ export async function GET({ params, request }) {
     const mimeType = fileRecord.mimeType || 'application/octet-stream';
     const shouldInline = mimeType.startsWith('image/') || mimeType.startsWith('video/');
 
+    // Get the file data from fileData table
+    const [fileBinaryData] = await db.select().from(fileData).where(eq(fileData.fileId, fileRecord.id)).limit(1);
+    if (!fileBinaryData || !fileBinaryData.data) {
+        return new Response('File data not found', { status: 404 });
+    }
+
     // Serve the file
-    return new Response(fileRecord.data, {
+    return new Response(fileBinaryData.data, {
         headers: {
             'Content-Type': mimeType,
             'Content-Disposition': `${shouldInline ? 'inline' : 'attachment'}; filename="${fileRecord.name}"`

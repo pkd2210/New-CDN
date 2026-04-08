@@ -1,6 +1,6 @@
 import { auth } from '$lib/server/auth'; // Better-auth instance
 import { db } from '$lib/server/db'; // Drizzle ORM instance
-import { files, buckets } from '$lib/server/db/schema'; // Drizzle ORM schema for files and buckets
+import { files, buckets, fileData } from '$lib/server/db/schema'; // Drizzle ORM schema for files and buckets
 import { eq } from 'drizzle-orm'; // Drizzle ORM helper for equality checks
 import { json } from '@sveltejs/kit';
 import { env } from '$env/dynamic/private';
@@ -52,16 +52,22 @@ export async function POST({ params, request }) {
     }
     // Generate a unique ID for the file (you can use a library like uuid)
     const id = crypto.randomUUID();
+    const fileBuffer = await file.arrayBuffer();
 
-    // Save the file to the database
+    // Save the file metadata and data separately
     await db.insert(files).values({
         id,
         bucket,
         userId: session.user.id, // Use the authenticated user's ID
         name: fileName,
-        data: await file.arrayBuffer(),
         mimeType: file.type,
         size: file.size,
+    });
+
+    // Save the file data separately
+    await db.insert(fileData).values({
+        fileId: id,
+        data: fileBuffer,
     });
 
     return new Response(JSON.stringify({

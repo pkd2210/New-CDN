@@ -1,6 +1,6 @@
 import { auth } from '$lib/server/auth'; // Better-auth instance
 import { db } from '$lib/server/db'; // Drizzle ORM instance
-import { files, buckets } from '$lib/server/db/schema'; // Drizzle ORM schema for files and buckets
+import { files, buckets, fileData } from '$lib/server/db/schema'; // Drizzle ORM schema for files and buckets
 import { eq } from 'drizzle-orm'; // Drizzle ORM helper for equality checks
 import { json } from '@sveltejs/kit';
 
@@ -28,7 +28,7 @@ export async function GET({ params, request }) {
         return new Response('Access denied', { status: 403 });
     }
 
-    // Delete the file from the database
+    // Delete the file metadata (cascading delete will handle fileData)
     await db.delete(files).where(eq(files.name, filename), eq(files.bucket, bucket));
 
     return new Response('File deleted successfully', { status: 200 });
