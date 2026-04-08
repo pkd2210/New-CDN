@@ -8,16 +8,22 @@ export async function load({ request, fetch }) {
         headers: request.headers
     });
     if (!session?.user) {
-        return { user: null, buckets: [] };
+        return { user: null, buckets: [], users: [] };
     }
     const isAdmin = await isAdminUser(session.user.id);
     // Fetch the user's buckets from the /api/me endpoint
-    const response = await fetch('/api/me');
-    if (!response.ok) {
-        return { user: session.user, buckets: [] };
+    const [meResponse, usersResponse] = await Promise.all([
+        fetch('/api/me'),
+        isAdmin ? fetch('/api/admin/users') : Promise.resolve(null)
+    ]);
+
+    if (!meResponse.ok) {
+        return { user: session.user, buckets: [], users: [] };
     }
-    const buckets = await response.json();
-    // get bucket.userId from the buckets and compare it to the session.user.id, if they match, add a property "isOwner" to the bucket object and set it to true, otherwise set it to false
+
+    const buckets = await meResponse.json();
+    const usersData = usersResponse && usersResponse.ok ? await usersResponse.json() : { users: [] };
+
     buckets.forEach(bucket => {
         bucket.isOwner = bucket.userId === session.user.id;
         bucket.isAdmin = Boolean(bucket.isAdmin);
@@ -38,6 +44,7 @@ export async function load({ request, fetch }) {
             ...session.user,
             isAdmin
         },
-        buckets
+        buckets,
+        users: usersData.users ?? []
     };
 }

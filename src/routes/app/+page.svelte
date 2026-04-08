@@ -7,9 +7,12 @@
     let { data } = $props();
 
     const buckets = $derived(data.buckets ?? []);
+    const users = $derived(data.users ?? []);
 
     let createBucketOpen = $state(false);
     let createUserOpen = $state(false);
+    let deleteUsersOpen = $state(false);
+    let selectedUser = $state(null);
     let newBucketName = $state('');
     let useMyselfAsOwner = $state(true);
     let ownerId = $state('');
@@ -52,6 +55,30 @@
 
         const errorMessage = await response.text();
         alert(errorMessage || 'Failed to create bucket');
+    }
+
+    async function submitDeleteUser(userId) {
+        if (!confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
+            return;
+        }
+
+        const response = await fetch(`/api/users/delete/${userId}`, {
+            method: 'DELETE'
+        });
+
+        if (response.ok) {
+            alert('User deleted successfully');
+            window.location.reload();
+            return;
+        }
+
+        const errorMessage = await response.text();
+        alert(errorMessage || 'Failed to delete user');
+    }
+
+    function openDeleteUserDialog(user) {
+        selectedUser = user;
+        deleteUsersOpen = true;
     }
 
     async function submitCreateUser() {
@@ -172,6 +199,42 @@
                     <AlertDialog.Footer>
                         <AlertDialog.Cancel>Cancel</AlertDialog.Cancel>
                         <AlertDialog.Action onclick={submitCreateUser}>Create</AlertDialog.Action>
+                    </AlertDialog.Footer>
+                </AlertDialog.Content>
+            </AlertDialog.Root>
+            <AlertDialog.Root bind:open={deleteUsersOpen}>
+                <AlertDialog.Trigger class="rounded bg-red-600 px-4 py-2 text-white">
+                    Delete User
+                </AlertDialog.Trigger>
+                <AlertDialog.Content>
+                    <AlertDialog.Header>
+                        <AlertDialog.Title>Admin Users</AlertDialog.Title>
+                    </AlertDialog.Header>
+                    <AlertDialog.Description>
+                        <div class="space-y-3 text-left">
+                            {#if users.length}
+                                <ul class="space-y-2">
+                                    {#each users as user}
+                                        <li class="flex items-center justify-between gap-3 rounded border border-yellow-400 bg-white/70 px-3 py-2 text-sm text-yellow-950">
+                                            <div>
+                                                <p class="font-medium">{user.name}</p>
+                                                <p class="text-xs text-yellow-800">Email: {user.email}</p>
+                                                <p class="text-xs text-yellow-800">User ID: {user.id}</p>
+                                            </div>
+                                            <button class="rounded bg-red-600 px-3 py-1 text-white" onclick={() => openDeleteUserDialog(user)}>
+                                                Delete
+                                            </button>
+                                        </li>
+                                    {/each}
+                                </ul>
+                            {:else}
+                                <p>No users loaded.</p>
+                            {/if}
+                        </div>
+                    </AlertDialog.Description>
+                    <AlertDialog.Footer>
+                        <AlertDialog.Cancel>Cancel</AlertDialog.Cancel>
+                        <AlertDialog.Action disabled={!selectedUser} onclick={() => submitDeleteUser(selectedUser.id)}>Confirm Delete</AlertDialog.Action>
                     </AlertDialog.Footer>
                 </AlertDialog.Content>
             </AlertDialog.Root>
