@@ -40,14 +40,6 @@ npm run db:push
 npm run dev
 ```
 
-## OG Admin Bootstrap
-
-If `OG_ADMIN_NAME`, `OG_ADMIN_EMAIL`, and `OG_ADMIN_PASSWORD` are set, the app bootstraps an admin user automatically:
-
-- Creates the user if missing
-- Creates credential account if missing
-- Adds the user to `admin_list` if missing
-
 ## Useful Commands
 
 ```sh
