@@ -1,42 +1,63 @@
-# sv
+Basically, there are no good all-in-one CDNs, so I built this.
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+## Setup
 
-## Creating a project
-
-If you're seeing this, you've probably already done this step. Congrats!
+1. Install dependencies
 
 ```sh
-# create a new project
-npx sv create my-app
+npm install
 ```
 
-To recreate this project with the same configuration:
+2. Configure `.env`
+
+```env
+BETTER_AUTH_SECRET=replace-with-a-long-random-secret
+BETTER_AUTH_URL=http://localhost:3000
+
+DATABASE_URL=postgres://root:mysecretpassword@localhost:5432/local
+ORIGIN=http://localhost:5173
+
+OG_ADMIN_NAME=Your Name
+OG_ADMIN_EMAIL=you@example.com
+OG_ADMIN_PASSWORD=replace-with-a-strong-password
+```
+
+3. Start Postgres
 
 ```sh
-# recreate this project
-npx sv@0.14.1 create --template minimal --no-types --add sveltekit-adapter="adapter:auto" tailwindcss="plugins:none" better-auth="demo:password" drizzle="database:postgresql+postgresql:postgres.js+docker:yes" --install npm ./
+npm run db:start
 ```
 
-## Developing
+4. Push schema
 
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
+```sh
+npm run db:push
+```
+
+5. Start app
 
 ```sh
 npm run dev
-
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
 ```
 
-## Building
+## OG Admin Bootstrap
 
-To create a production version of your app:
+If `OG_ADMIN_NAME`, `OG_ADMIN_EMAIL`, and `OG_ADMIN_PASSWORD` are set, the app bootstraps an admin user automatically:
+
+- Creates the user if missing
+- Creates credential account if missing
+- Adds the user to `admin_list` if missing
+
+## Useful Commands
 
 ```sh
+npm run dev
 npm run build
+npm run preview
+npm run db:start
+npm run db:push
+npm run db:generate
+npm run db:migrate
+npm run db:studio
+npm run auth:schema
 ```
-
-You can preview the production build with `npm run preview`.
-
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
