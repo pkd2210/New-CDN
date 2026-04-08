@@ -1,5 +1,6 @@
 // return the user's buckets thorugh the /api/me endpoint
 import { auth } from '$lib/server/auth';
+import { isAdminUser } from '$lib/server/permissions';
 
 /** @type {import('./$types').PageServerLoad} */
 export async function load({ request, fetch }) {
@@ -9,6 +10,7 @@ export async function load({ request, fetch }) {
     if (!session?.user) {
         return { user: null, buckets: [] };
     }
+    const isAdmin = await isAdminUser(session.user.id);
     // Fetch the user's buckets from the /api/me endpoint
     const response = await fetch('/api/me');
     if (!response.ok) {
@@ -31,5 +33,11 @@ export async function load({ request, fetch }) {
             bucket.ownerName = 'Unknown';
         }
     }));
-    return { user: session.user, buckets };
+    return {
+        user: {
+            ...session.user,
+            isAdmin
+        },
+        buckets
+    };
 }
