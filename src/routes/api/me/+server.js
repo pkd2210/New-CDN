@@ -24,7 +24,7 @@ export async function GET({ request }) {
         );
         // add a used space and free space sections
     await Promise.all(userBuckets.map(async bucket => {
-        const bucketFiles = await db.select().from(files).where(eq(files.bucket, bucket.name));
+        const bucketFiles = await db.select({ size: files.size }).from(files).where(eq(files.bucket, bucket.name));
         const usedSpace = bucketFiles.reduce((total, file) => total + file.size, 0);
         bucket.usedSpace = usedSpace;
         bucket.freeSpace = bucket.sizeLimit - usedSpace;

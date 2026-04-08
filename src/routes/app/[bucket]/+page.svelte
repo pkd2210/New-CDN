@@ -1,10 +1,49 @@
 <script>
     import * as Card from "$lib/components/ui/card";
+    import * as FileDropZone from '$lib/components/ui/file-drop-zone';
 
     let { data } = $props();
 
     const bucketInfo = $derived(data.bucketInfo ?? null);
     const bucketFiles = $derived(data.bucketFiles ?? []);
+    const sortedFiles = $derived([...bucketFiles].reverse());
+
+    async function handleFileUpload(files) {
+        if (!files || files.length === 0) return;
+        
+        let uploadedCount = 0;
+        let failedCount = 0;
+
+        for (const file of files) {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const response = await fetch(`/api/files/upload/${bucketInfo.name}`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    uploadedCount++;
+                } else {
+                    const error = await response.text();
+                    console.error(`Failed to upload ${file.name}:`, error);
+                    failedCount++;
+                }
+            } catch (error) {
+                console.error(`Error uploading ${file.name}:`, error);
+                failedCount++;
+            }
+        }
+
+        if (uploadedCount > 0) {
+            alert(`${uploadedCount} file(s) uploaded successfully`);
+            window.location.reload();
+        } else if (failedCount > 0) {
+            alert(`Failed to upload ${failedCount} file(s). Check the console for details.`);
+        }
+    }
 
     async function deleteFile(fileName) {
         if (!confirm(`Are you sure you want to delete ${fileName}? This action cannot be undone.`)) {
@@ -65,12 +104,20 @@
     {/if}
 {/if}
 
+<div class="my-8">
+    <h2 class="text-2xl font-bold mb-4">Upload Files</h2>
+    <FileDropZone.Root onUpload={handleFileUpload}>
+        <FileDropZone.Trigger />
+        <FileDropZone.Textarea />
+    </FileDropZone.Root>
+</div>
+
 <div class="mt-8">
     <h2 class="text-2xl font-bold mb-4">Files</h2>
 
     {#if bucketFiles.length > 0}
         <div class="grid gap-4">
-            {#each bucketFiles as file}
+            {#each sortedFiles as file}
                 <Card.Root>
                     <Card.Header>
                         <Card.Title>{file.name}</Card.Title>

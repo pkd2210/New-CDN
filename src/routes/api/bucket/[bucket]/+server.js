@@ -31,5 +31,17 @@ export async function GET({ request, params }) {
     }
 
     const bucketFiles = await db.select().from(files).where(eq(files.bucket, bucket));
-    return json({ bucket: bucketInfo, files: bucketFiles });
+    
+    // Map files to exclude the binary data field, only return metadata
+    const fileMetadata = bucketFiles.map(file => ({
+        id: file.id,
+        bucket: file.bucket,
+        userId: file.userId,
+        name: file.name,
+        mimeType: file.mimeType,
+        size: file.size,
+        createdAt: file.createdAt
+    }));
+    
+    return json({ bucket: bucketInfo, files: fileMetadata });
 }
