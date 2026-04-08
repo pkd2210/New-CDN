@@ -1,8 +1,9 @@
 import { auth } from '$lib/server/auth';
 import { db } from '$lib/server/db';
 import { files, buckets } from '$lib/server/db/schema';
-import { eq, or, sql } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { json } from '@sveltejs/kit';
+import { hasBucketAccess, isAdminUser } from '$lib/server/permissions';
 
 export async function GET({ request, params }) {
     const { bucket } = params;
@@ -13,20 +14,15 @@ export async function GET({ request, params }) {
     if (!session?.user) {
         return new Response('Unauthorized', { status: 401 });
     }
+    const isAdmin = await isAdminUser(session.user.id);
 
     const [bucketInfo] = await db
         .select()
         .from(buckets)
-        .where(
-            eq(buckets.name, bucket),
-            or(
-                eq(buckets.userId, session.user.id),
-                sql`${session.user.id} = ANY(${buckets.accessList})`
-            )
-        )
+        .where(eq(buckets.name, bucket))
         .limit(1);
 
-    if (!bucketInfo) {
+    if (!bucketInfo || !hasBucketAccess(bucketInfo, session.user.id, isAdmin)) {
         return new Response('Bucket not found', { status: 404 });
     }
 

@@ -99,7 +99,8 @@
     <p>Used: {((bucketInfo.sizeLimit - bucketInfo.freeSpace) / (1024 * 1024 * 1024)).toFixed(2)} GB / {(bucketInfo.sizeLimit / (1024 * 1024 * 1024)).toFixed(2)} GB</p>
     <p>Created By: {bucketInfo.ownerName}</p>
     <p>Is Owner: {bucketInfo.isOwner ? 'Yes' : 'No'}</p>
-    {#if bucketInfo.isOwner}
+    <p>Is Admin: {bucketInfo.isAdmin ? 'Yes' : 'No'}</p>
+    {#if bucketInfo.canManage}
         <button onclick={deleteBucket} class="mt-4 px-4 py-2 bg-red-500 text-white rounded">Delete Bucket</button>
     {/if}
 {/if}

@@ -53,4 +53,13 @@ export const buckets = pgTable(
   ],
 );
 
+export const adminList = pgTable(
+  "admin_list",
+  {
+    id: serial("id").primaryKey(),
+    userId: text("user_id").notNull(), // Admin user ID
+    createdAt: timestamp("created_at").defaultNow(),
+  },
+);
+
 export *  from './auth.schema';

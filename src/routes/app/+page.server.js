@@ -18,6 +18,8 @@ export async function load({ request, fetch }) {
     // get bucket.userId from the buckets and compare it to the session.user.id, if they match, add a property "isOwner" to the bucket object and set it to true, otherwise set it to false
     buckets.forEach(bucket => {
         bucket.isOwner = bucket.userId === session.user.id;
+        bucket.isAdmin = Boolean(bucket.isAdmin);
+        bucket.canManage = bucket.isOwner || bucket.isAdmin;
     });
     // get the userId of the bucket and get a username from the database and add it to the bucket object as "ownerName"
     await Promise.all(buckets.map(async bucket => {

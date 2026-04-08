@@ -2,9 +2,10 @@
 import { auth } from '$lib/server/auth'; // Better-auth instance
 import { db } from '$lib/server/db'; // Drizzle ORM instance
 import { files, buckets } from '$lib/server/db/schema'; // Drizzle ORM schema for files and buckets
-import { eq, or, sql } from 'drizzle-orm'; // Drizzle ORM helpers
+import { eq } from 'drizzle-orm'; // Drizzle ORM helpers
 import { json } from '@sveltejs/kit';
 import { env } from '$env/dynamic/private';
+import { hasBucketAccess, isAdminUser } from '$lib/server/permissions';
 
 export async function GET({ request, params }) {
     const { bucket } = params;
@@ -15,19 +16,15 @@ export async function GET({ request, params }) {
     if (!session?.user) {
         return new Response('Unauthorized', { status: 401 });
     }
+    const isAdmin = await isAdminUser(session.user.id);
+
     // Check if bucket exists and user has access to it
     const [bucketInfo] = await db
         .select()
         .from(buckets)
-        .where(
-            eq(buckets.name, bucket),
-            or(
-                eq(buckets.userId, session.user.id),
-                sql`${session.user.id} = ANY(${buckets.accessList})`
-            )
-        )
+        .where(eq(buckets.name, bucket))
         .limit(1);
-    if (!bucketInfo) {
+    if (!bucketInfo || !hasBucketAccess(bucketInfo, session.user.id, isAdmin)) {
         return new Response('Bucket not found', { status: 404 });
     }
     // Get files in the bucket (metadata only)

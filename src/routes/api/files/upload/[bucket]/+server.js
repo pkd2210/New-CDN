@@ -4,6 +4,7 @@ import { files, buckets, fileData } from '$lib/server/db/schema'; // Drizzle ORM
 import { eq } from 'drizzle-orm'; // Drizzle ORM helper for equality checks
 import { json } from '@sveltejs/kit';
 import { env } from '$env/dynamic/private';
+import { hasBucketAccess, isAdminUser } from '$lib/server/permissions';
 
 export async function GET({ params }) {
     return new Response("GET requests are not supported for file uploads", { status: 405 });
@@ -21,13 +22,15 @@ export async function POST({ params, request }) {
     if (!session?.user) {
         return new Response('Unauthorized', { status: 401 });
     }
+    const isAdmin = await isAdminUser(session.user.id);
+
     // Check if bucket exists
     const [bucketExists] = await db.select().from(buckets).where(eq(buckets.name, bucket)).limit(1);
     if (!bucketExists) {
         return new Response('Bucket not found', { status: 404 });
     }
     // Check if user has access to upload to this bucket
-    if (!bucketExists.accessList?.includes(session.user.id)) {
+    if (!hasBucketAccess(bucketExists, session.user.id, isAdmin)) {
         return new Response('Access denied', { status: 403 });
     }
     // get file from request

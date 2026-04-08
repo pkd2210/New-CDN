@@ -1,6 +1,6 @@
 import { auth } from '$lib/server/auth'; // Better-auth instance
 import { db } from '$lib/server/db'; // Drizzle ORM instance
-import { files, buckets } from '$lib/server/db/schema'; // Drizzle ORM schema for files and buckets
+import { files, buckets, adminList } from '$lib/server/db/schema'; // Drizzle ORM schema for files and buckets
 import { eq } from 'drizzle-orm'; // Drizzle ORM helper for equality checks
 
 export async function GET({ params, request }) {
@@ -12,6 +12,11 @@ export async function GET({ params, request }) {
     });
     if (!session?.user) {
         return new Response('Unauthorized', { status: 401 });
+    }
+    // Check if user is an admin
+    const [adminRecord] = await db.select().from(adminList).where(eq(adminList.userId, session.user.id)).limit(1);
+    if (!adminRecord) {
+        return new Response('Forbidden', { status: 403 });
     }
     // Check for duplicate buckets
     const [existingBucket] = await db.select().from(buckets).where(eq(buckets.name, bucket)).limit(1);

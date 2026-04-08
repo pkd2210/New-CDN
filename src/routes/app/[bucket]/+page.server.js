@@ -24,6 +24,8 @@ export async function load({ request, fetch, params }) {
     }
 
     bucketInfo.isOwner = bucketInfo.userId === session.user.id;
+    bucketInfo.isAdmin = Boolean(bucketInfo.isAdmin);
+    bucketInfo.canManage = bucketInfo.isOwner || bucketInfo.isAdmin;
 
     const ownerResponse = await fetch(`/api/users/${bucketInfo.userId}`);
     if (ownerResponse.ok) {

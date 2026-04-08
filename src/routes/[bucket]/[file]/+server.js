@@ -4,6 +4,7 @@ import { auth } from '$lib/server/auth'; // Better-auth instance
 import { db } from '$lib/server/db'; // Drizzle ORM instance
 import { files, buckets, fileData } from '$lib/server/db/schema'; // Drizzle ORM schema for files and buckets
 import { eq } from 'drizzle-orm'; // Drizzle ORM helper for equality checks
+import { hasBucketAccess, isAdminUser } from '$lib/server/permissions';
 
 export async function GET({ params, request }) {
     // get bucket and file name from dynamic route
@@ -27,7 +28,8 @@ export async function GET({ params, request }) {
         if (!session?.user) {
             return new Response('Unauthorized', { status: 401 });
         }
-        if (!bucketExists.accessList?.includes(session.user.id)) {
+        const isAdmin = await isAdminUser(session.user.id);
+        if (!hasBucketAccess(bucketExists, session.user.id, isAdmin)) {
             return new Response('Access denied', { status: 403 });
         }
     }
