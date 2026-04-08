@@ -42,9 +42,20 @@ export async function load({ request, fetch, params }) {
 
     const bucketData = await bucketResponse.json();
 
+    const accessUsers = await Promise.all((bucketInfo.accessList ?? []).map(async (userId) => {
+        const response = await fetch(`/api/users/${encodeURIComponent(userId)}`);
+        if (response.ok) {
+            const user = await response.json();
+            return { id: userId, name: user.name ?? userId };
+        }
+
+        return { id: userId, name: userId };
+    }));
+
     return {
         user: session.user,
         bucketInfo,
-        bucketFiles: bucketData.files ?? []
+        bucketFiles: bucketData.files ?? [],
+        accessUsers
     };
 }

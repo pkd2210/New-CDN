@@ -7,6 +7,9 @@
     const bucketInfo = $derived(data.bucketInfo ?? null);
     const bucketFiles = $derived(data.bucketFiles ?? []);
     const sortedFiles = $derived([...bucketFiles].reverse());
+    const accessUsers = $derived(data.accessUsers ?? []);
+
+    let accessUserId = $state('');
 
     async function handleFileUpload(files) {
         if (!files || files.length === 0) return;
@@ -79,6 +82,35 @@
             alert('Failed to delete bucket');
         }
     }
+
+    async function addAccess() {
+        const userId = accessUserId.trim();
+        if (!userId) {
+            alert('Enter a user id to add access');
+            return;
+        }
+
+        const response = await fetch(`/api/buckets/access/add/${bucketInfo.name}/${encodeURIComponent(userId)}`);
+        if (response.ok) {
+            alert('Access granted');
+            accessUserId = '';
+            window.location.reload();
+            return;
+        }
+
+        alert(await response.text());
+    }
+
+    async function removeAccess(userId) {
+        const response = await fetch(`/api/buckets/access/remove/${bucketInfo.name}/${encodeURIComponent(userId)}`);
+        if (response.ok) {
+            alert('Access removed');
+            window.location.reload();
+            return;
+        }
+
+        alert(await response.text());
+    }
 </script>
 
 <!-- Back button -->
@@ -103,6 +135,42 @@
     {#if bucketInfo.canManage}
         <button onclick={deleteBucket} class="mt-4 px-4 py-2 bg-red-500 text-white rounded">Delete Bucket</button>
     {/if}
+{/if}
+
+{#if bucketInfo?.canManage}
+    <div class="mt-6 rounded border border-gray-300 p-4">
+        <h2 class="text-xl font-bold mb-3">Access Management</h2>
+        <div class="flex flex-col gap-3 md:flex-row md:items-end">
+            <div class="flex-1">
+                <p class="mb-1">User ID</p>
+                <input bind:value={accessUserId} type="text" placeholder="Paste user id here" class="w-full rounded border px-2 py-1" />
+            </div>
+            <button onclick={addAccess} class="px-4 py-2 bg-blue-600 text-white rounded">Add Access</button>
+        </div>
+
+        <div class="mt-4">
+            <p class="mb-2 font-medium">Current Access</p>
+            {#if accessUsers.length > 0}
+                <div class="grid gap-2">
+                    {#each accessUsers as accessUser}
+                        <div class="flex items-center justify-between rounded bg-gray-500 px-3 py-2">
+                            <div>
+                                <span class="font-mono text-sm break-all">{accessUser.name} ({accessUser.id})</span>
+                                {#if accessUser.id === bucketInfo.userId}
+                                    <span class="ml-2 rounded bg-green-100 px-2 py-0.5 text-xs text-green-700">Owner</span>
+                                {/if}
+                            </div>
+                            {#if accessUser.id !== bucketInfo.userId}
+                                <button onclick={() => removeAccess(accessUser.id)} class="px-3 py-1 bg-red-500 text-white rounded">Remove</button>
+                            {/if}
+                        </div>
+                    {/each}
+                </div>
+            {:else}
+                <p>No users currently have access.</p>
+            {/if}
+        </div>
+    </div>
 {/if}
 
 <div class="my-8">

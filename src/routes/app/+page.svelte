@@ -1,17 +1,24 @@
 <script>
     import * as Card from "$lib/components/ui/card";
     import * as AlertDialog from "$lib/components/ui/alert-dialog";
+    import * as Input from "$lib/components/ui/input";
+    import * as Label from "$lib/components/ui/label";
 
     let { data } = $props();
 
     const buckets = $derived(data.buckets ?? []);
 
     let createBucketOpen = $state(false);
+    let createUserOpen = $state(false);
     let newBucketName = $state('');
     let useMyselfAsOwner = $state(true);
     let ownerId = $state('');
     let sizeLimitGb = $state(5);
     let publication = $state('private');
+
+    let newUserName = $state('');
+    let newUserEmail = $state('');
+    let newUserPassword = $state('');
 
     async function submitCreateBucket() {
         if (!newBucketName.trim()) {
@@ -46,6 +53,37 @@
         const errorMessage = await response.text();
         alert(errorMessage || 'Failed to create bucket');
     }
+
+    async function submitCreateUser() {
+        if (!newUserName.trim() || !newUserEmail.trim() || !newUserPassword.trim()) {
+            alert('Name, email, and password are required');
+            return;
+        }
+
+        const response = await fetch('/api/users/create', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                name: newUserName.trim(),
+                email: newUserEmail.trim(),
+                password: newUserPassword
+            })
+        });
+
+        if (response.ok) {
+            alert('User created successfully');
+            createUserOpen = false;
+            newUserName = '';
+            newUserEmail = '';
+            newUserPassword = '';
+            return;
+        }
+
+        const errorMessage = await response.text();
+        alert(errorMessage || 'Failed to create user');
+    }
 </script>
 
 {#if data.user}
@@ -56,53 +94,88 @@
     </div>
 {/if}
 {#if data.user?.isAdmin}
-    <div class="mb-4 p-4 bg-yellow-100 border border-yellow-400 text-yellow-700 rounded">
-        <p>You are an admin user. You have permissions to manage all buckets and files.</p> 
-        <AlertDialog.Root bind:open={createBucketOpen}>
-            <AlertDialog.Trigger class="px-4 py-2 bg-gray-500 text-white rounded">
-                Create Bucket
-            </AlertDialog.Trigger>
-            <AlertDialog.Content>
-                <AlertDialog.Header>
-                    <AlertDialog.Title>Create Bucket</AlertDialog.Title>
-                </AlertDialog.Header>
-                <AlertDialog.Description>
-                    <div class="space-y-3 text-left">
-                        <div>
-                            <p class="mb-1">Bucket name</p>
-                            <input bind:value={newBucketName} type="text" placeholder="Bucket Name" class="w-full rounded border px-2 py-1" />
-                        </div>
-                        <div>
-                            <label class="inline-flex items-center gap-2">
-                                <input bind:checked={useMyselfAsOwner} type="checkbox" />
-                                <span>Use myself as owner</span>
-                            </label>
-                        </div>
-                        {#if !useMyselfAsOwner}
+    <div class="mb-4 rounded border border-yellow-400 bg-yellow-100 p-4 text-yellow-900">
+        <p class="font-medium">Admin menu</p>
+        <p class="mt-1 text-sm text-yellow-800">Create buckets or users from here.</p>
+
+        <div class="mt-4 flex flex-wrap gap-3">
+            <AlertDialog.Root bind:open={createBucketOpen}>
+                <AlertDialog.Trigger class="rounded bg-gray-700 px-4 py-2 text-white">
+                    Create Bucket
+                </AlertDialog.Trigger>
+                <AlertDialog.Content>
+                    <AlertDialog.Header>
+                        <AlertDialog.Title>Create Bucket</AlertDialog.Title>
+                    </AlertDialog.Header>
+                    <AlertDialog.Description>
+                        <div class="space-y-3 text-left">
                             <div>
-                                <p class="mb-1">Owner user id</p>
-                                <input bind:value={ownerId} type="text" placeholder="Owner user id" class="w-full rounded border px-2 py-1" />
+                                <p class="mb-1">Bucket name</p>
+                                <Input.Root bind:value={newBucketName} type="text" placeholder="Bucket Name" class="w-full rounded border px-2 py-1" />
                             </div>
-                        {/if}
-                        <div>
-                            <p class="mb-1">Size limit (GB)</p>
-                            <input bind:value={sizeLimitGb} type="number" min="1" step="1" class="w-full rounded border px-2 py-1" />
+                            <div>
+                                <label class="inline-flex items-center gap-2">
+                                    <input bind:checked={useMyselfAsOwner} type="checkbox" />
+                                    <span>Use myself as owner</span>
+                                </label>
+                            </div>
+                            {#if !useMyselfAsOwner}
+                                <div>
+                                    <p class="mb-1">Owner user id</p>
+                                    <Input.Root bind:value={ownerId} type="text" placeholder="Owner user id" class="w-full rounded border px-2 py-1" />
+                                </div>
+                            {/if}
+                            <div>
+                                <p class="mb-1">Size limit (GB)</p>
+                                <Input.Root bind:value={sizeLimitGb} type="number" min="1" step="1" class="w-full rounded border px-2 py-1" />
+                            </div>
+                            <div>
+                                <Label.Root class="mb-1 block">Publication</Label.Root>
+                                <select bind:value={publication} class="w-full rounded border px-2 py-1">
+                                    <option value="private">Private</option>
+                                    <option value="public">Public</option>
+                                </select>
+                            </div>
                         </div>
-                        <div>
-                            <p class="mb-1">Publication</p>
-                            <select bind:value={publication} class="w-full rounded border px-2 py-1">
-                                <option value="private">Private</option>
-                                <option value="public">Public</option>
-                            </select>
+                    </AlertDialog.Description>
+                    <AlertDialog.Footer>
+                        <AlertDialog.Cancel>Cancel</AlertDialog.Cancel>
+                        <AlertDialog.Action onclick={submitCreateBucket}>Create</AlertDialog.Action>
+                    </AlertDialog.Footer>
+                </AlertDialog.Content>
+            </AlertDialog.Root>
+
+            <AlertDialog.Root bind:open={createUserOpen}>
+                <AlertDialog.Trigger class="rounded bg-blue-600 px-4 py-2 text-white">
+                    Create User
+                </AlertDialog.Trigger>
+                <AlertDialog.Content>
+                    <AlertDialog.Header>
+                        <AlertDialog.Title>Create User</AlertDialog.Title>
+                    </AlertDialog.Header>
+                    <AlertDialog.Description>
+                        <div class="space-y-3 text-left">
+                            <div>
+                                <p class="mb-1">Name</p>
+                                <Input.Root bind:value={newUserName} type="text" placeholder="Full name" class="w-full rounded border px-2 py-1" />
+                            </div>
+                            <div>
+                                <p class="mb-1">Email</p>
+                                <Input.Root bind:value={newUserEmail} type="email" placeholder="Email address" class="w-full rounded border px-2 py-1" />
+                            </div>
+                            <div>
+                                <p class="mb-1">Password</p>
+                                <Input.Root bind:value={newUserPassword} type="password" placeholder="Password" class="w-full rounded border px-2 py-1" />
+                            </div>
                         </div>
-                    </div>
-                </AlertDialog.Description>
-                <AlertDialog.Footer>
-                    <AlertDialog.Cancel>Cancel</AlertDialog.Cancel>
-                    <AlertDialog.Action onclick={submitCreateBucket}>Create</AlertDialog.Action>
-                </AlertDialog.Footer>
-            </AlertDialog.Content>
-        </AlertDialog.Root>
+                    </AlertDialog.Description>
+                    <AlertDialog.Footer>
+                        <AlertDialog.Cancel>Cancel</AlertDialog.Cancel>
+                        <AlertDialog.Action onclick={submitCreateUser}>Create</AlertDialog.Action>
+                    </AlertDialog.Footer>
+                </AlertDialog.Content>
+            </AlertDialog.Root>
+        </div>
     </div>
 {/if}
 {#each buckets as bucket}
