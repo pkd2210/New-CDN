@@ -9,6 +9,23 @@ services:
       POSTGRES_PASSWORD: mysecretpassword
       POSTGRES_DB: local
     volumes:
-      - pgdata:/var/lib/postgresql
+      - pgdata:/var/lib/postgresql/data
+
+  app:
+    build: .
+    restart: always
+    ports:
+      - 3000:3000
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: postgres://root:mysecretpassword@db:5432/local
+      BETTER_AUTH_SECRET: replace-with-a-long-random-secret
+      BETTER_AUTH_URL: http://localhost:3000
+      ORIGIN: http://localhost:3000
+      HOST: 0.0.0.0
+      OG_ADMIN_NAME: Your Name
+      OG_ADMIN_EMAIL: you@example.com
+      OG_ADMIN_PASSWORD: replace-with-a-strong-password
 volumes:
   pgdata:
