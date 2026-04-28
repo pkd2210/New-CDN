@@ -1,5 +1,10 @@
 Basically, there are no good all-in-one CDNs, so I built this.
 
+## Stack
+### The application is built mostly with:
+* Framework: Svelte + SvelteKit
+* DB: Drizzle & Postgress
+
 ## Setup
 
 1. Install dependencies
