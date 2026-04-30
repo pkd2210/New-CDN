@@ -59,6 +59,6 @@ npm run db:studio
 npm run auth:schema
 ```
 ## How it works
-The cdn work's by taking you file, converting it to binary, and saving it in the database,
-Once the file is requested, we just query the database, and server you the file,
+The cdn works by taking your file, converting it to binary, and saving it in the database,
+Once the file is requested, we just query the database, and serve you the file,
 It works fast and reliably thanks to using postgress and svelte
